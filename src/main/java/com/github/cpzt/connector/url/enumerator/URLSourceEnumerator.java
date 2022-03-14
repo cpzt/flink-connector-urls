@@ -5,10 +5,12 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import com.github.cpzt.connector.url.enumerator.assigner.SimpleSplitAssigner;
 import com.github.cpzt.connector.url.enumerator.assigner.URLSplitAssigner;
 import com.github.cpzt.connector.url.enumerator.state.PendingSplitsState;
+import com.github.cpzt.connector.url.reader.AddSourceSplitEvent;
 import com.github.cpzt.connector.url.split.URLSourceSplit;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
+import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.slf4j.Logger;
@@ -93,6 +96,15 @@ public class URLSourceEnumerator implements
   @Override
   public void close() throws IOException {
     // no resources to close
+  }
+
+  @Override
+  public void handleSourceEvent(int subtaskId, SourceEvent sourceEvent) {
+    if (sourceEvent instanceof AddSourceSplitEvent) {
+      URLSourceSplit[] splits = ((AddSourceSplitEvent) sourceEvent).getSplits();
+      splitAssigner.addSplits(new ArrayList<>(Arrays.asList(splits)));
+      LOG.info("add split");
+    }
   }
 
   // ------------------------------------------------------------------------

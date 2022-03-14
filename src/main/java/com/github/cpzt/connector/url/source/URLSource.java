@@ -5,11 +5,13 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import com.github.cpzt.connector.url.enumerator.URLSourceEnumerator;
 import com.github.cpzt.connector.url.enumerator.state.PendingSplitsState;
 import com.github.cpzt.connector.url.enumerator.state.PendingSplitsStateSerializer;
+import com.github.cpzt.connector.url.reader.IFunction;
 import com.github.cpzt.connector.url.reader.URLSourceReader;
 import com.github.cpzt.connector.url.split.URLSourceSplit;
 import com.github.cpzt.connector.url.split.URLSourceSplitSerializer;
 import java.net.URL;
 import java.util.Collections;
+import java.util.function.Function;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.Source;
@@ -27,6 +29,11 @@ public class URLSource implements Source<RowData, URLSourceSplit, PendingSplitsS
   private final TypeInformation<RowData> producedTypeInfo;
   private final URL[] urls;
 
+  public URLSourceReader sourceReader;
+
+  private Function<RowData, URLSourceSplit[]> addSplitFunction = null;
+
+
   public URLSource(TypeInformation<RowData> producedTypeInfo, URL[] urls) {
     this.producedTypeInfo = checkNotNull(producedTypeInfo);
     this.urls = checkNotNull(urls);
@@ -40,7 +47,8 @@ public class URLSource implements Source<RowData, URLSourceSplit, PendingSplitsS
   @Override
   public SourceReader<RowData, URLSourceSplit> createReader(SourceReaderContext readerContext)
       throws Exception {
-    return new URLSourceReader(readerContext);
+    sourceReader = new URLSourceReader(readerContext, addSplitFunction);
+    return sourceReader;
   }
 
   @Override
@@ -70,5 +78,12 @@ public class URLSource implements Source<RowData, URLSourceSplit, PendingSplitsS
   @Override
   public TypeInformation<RowData> getProducedType() {
     return producedTypeInfo;
+  }
+
+  public URLSource withAddSplitFunction(IFunction<RowData, URLSourceSplit[]> function) {
+    if (null != function) {
+      this.addSplitFunction = function;
+    }
+    return this;
   }
 }

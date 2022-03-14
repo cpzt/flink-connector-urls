@@ -2,7 +2,7 @@ package com.github.cpzt.connector.url.reader;
 
 import org.apache.flink.table.data.RowData;
 
-public class URLRecord {
+public class URLRecord implements IRecord<RowData> {
   private final RowData record;
   private final long offset;
 
